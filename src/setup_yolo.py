@@ -100,16 +100,16 @@ def download_catalog(max_gb: float, selected: list[str], force: bool = False) ->
     total = 0
     for item in chosen:
         size = dataset_size_bytes(api, item["id"])
-        if total + size > max_gb * 1024**3:
+        if total + size > max_gb * 1_000_000_000:
             print(
-                f"SKIP {item['id']}: {size / 1024**3:.2f} GiB would exceed "
+                f"SKIP {item['id']}: {size / 1_000_000_000:.2f} GB would exceed "
                 f"the {max_gb:.2f} GiB total limit."
             )
             continue
         planned.append((item, size))
         total += size
 
-    print(f"Selected download budget: {total / 1024**3:.2f} GiB / {max_gb:.2f} GiB")
+    print(f"Selected download budget: {total / 1_000_000_000:.2f} GiB / {max_gb:.2f} GiB")
     manifest = []
     for item, size in planned:
         destination = SOURCES_DIR / item["folder"]
