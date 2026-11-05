@@ -1,6 +1,17 @@
 # API demonstrativa
 
+Inicie o servidor a partir da raiz do repositório:
+
+```bash
+uvicorn src.api:app --host 0.0.0.0 --port 8000
+```
+
+Abra **http://localhost:8000** no navegador (não use `0.0.0.0` como endereço de destino).
+
+- `GET /`: informações do serviço e links para documentação.
 - `GET /health`: verifica disponibilidade do serviço.
+- `GET /docs`: documentação interativa Swagger.
+- `GET /redoc`: documentação ReDoc.
 - `POST /v1/infer`: recebe oito sinais numéricos e retorna HTTP 202 com `job_id`.
 - `GET /v1/jobs/{job_id}`: consulta o resultado.
 
