@@ -12,7 +12,7 @@ Por padrão, o instalador:
 1. Mantém PyTorch existente se estiver funcional; caso contrário instala a build CPU para evitar CUDA desnecessário.
 2. Instala Ultralytics e Hugging Face Hub.
 3. Consulta o tamanho total dos arquivos dos repositórios selecionados antes do download.
-4. Baixa os datasets públicos catalogados até o limite padrão de 25 GiB.
+4. Baixa os datasets públicos catalogados até o limite padrão de 25 GB.
 5. Registra origem, licença declarada, tamanho e diretório em `data/yolo/datasets-manifest.json`.
 6. Prepara para YOLO somente a fonte CC0 com anotações nativas YOLO.
 7. Opcionalmente inicia o treinamento.
