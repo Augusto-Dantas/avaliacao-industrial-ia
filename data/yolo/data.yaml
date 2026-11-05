@@ -1,0 +1,10 @@
+# Template for the Hugging Face Welding Defect Object Detection dataset.
+# Verify the downloaded dataset layout and adjust paths before training.
+path: data/yolo
+train: images/train
+val: images/val
+test: images/test
+names:
+  0: bad_weld
+  1: good_weld
+  2: defect
