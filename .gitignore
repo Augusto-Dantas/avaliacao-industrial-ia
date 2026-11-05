@@ -5,3 +5,10 @@ __pycache__/
 models/*.joblib
 models/metrics.json
 data/*.csv
+
+# YOLO datasets and generated artifacts
+data/raw/
+data/yolo/images/
+data/yolo/labels/
+runs/
+*.pt
