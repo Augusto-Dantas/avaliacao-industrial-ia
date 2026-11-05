@@ -19,7 +19,8 @@ Python 3.10 ou superior.
 
 Coloque o arquivo fornecido `dataset_industrial_cibersistemas_15k.csv` em `data/`, então execute:
 
-```bash
+```
+bash
 python -m venv .venv
 # Linux/macOS
 source .venv/bin/activate
