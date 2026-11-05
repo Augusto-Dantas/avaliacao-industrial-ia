@@ -6,7 +6,7 @@ Na raiz do repositório, com a virtualenv ativada:
 python src/setup_yolo.py
 ```
 
-O comando instala as dependências necessárias, consulta o tamanho publicado dos datasets antes de baixar, aplica um teto combinado de **25 GiB** e baixa as fontes públicas catalogadas. Downloads interrompidos podem ser retomados pelo cache do Hugging Face. Para treinar ao final:
+O comando instala as dependências necessárias, consulta o tamanho publicado dos datasets antes de baixar, aplica um teto combinado de **25 GB** e baixa as fontes públicas catalogadas. Downloads interrompidos podem ser retomados pelo cache do Hugging Face. Para treinar ao final:
 
 ```bash
 python src/setup_yolo.py --train
