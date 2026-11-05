@@ -1,12 +1,25 @@
 # Dataset YOLO (local)
 
-Este diretório recebe os dados de treinamento. As imagens, anotações e pesos não são versionados no Git.
+O dataset padrão pode ser baixado e preparado automaticamente:
 
-Estrutura esperada:
+```bash
+python src/setup_yolo.py
+```
+
+Para preparar e iniciar o treinamento:
+
+```bash
+python src/setup_yolo.py --train
+```
+
+O utilitário instala as dependências, baixa o dataset CC0 `rikkarth/welding-defect-object-detection`, mapeia os splits `train/valid/test` para `train/val/test` e gera `data.yaml`.
+
+Estrutura gerada:
 
 ```text
 data/yolo/
 ├── data.yaml
+├── .download/
 ├── images/
 │   ├── train/
 │   ├── val/
@@ -17,6 +30,4 @@ data/yolo/
     └── test/
 ```
 
-Cada imagem anotada deve ter um arquivo `.txt` homônimo. Imagens negativas, sem objetos, podem ficar sem arquivo de rótulo. Consulte [../../docs/dataset_yolo.md](../../docs/dataset_yolo.md) para fontes, classes, licenças e regras de divisão.
-
-Não coloque imagens sintéticas na validação ou no teste final. O teste principal deve conter imagens reais de origem independente.
+Imagens, anotações, cache e pesos não são versionados no Git. Use `--force` para substituir o dataset local. Consulte [../../docs/dataset_yolo.md](../../docs/dataset_yolo.md) para limitações e critérios de avaliação.
