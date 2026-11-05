@@ -55,7 +55,7 @@ O instalador:
 1. Mantém PyTorch funcional ou instala a build CPU caso esteja ausente/quebrada.
 2. Instala Ultralytics e Hugging Face Hub.
 3. Consulta os tamanhos dos repositórios e aplica limite combinado padrão de 25 GiB.
-4. Baixa as três fontes públicas catalogadas: `rikkarth/welding-defect-object-detection`, `AI4Manufacturing/217` e `AI4Manufacturing/218`.
+4. Baixa as três fontes públicas catalogadas: `rikkarth/welding-defect-object-detection`, `AI4Manufacturing/217`, `AI4Manufacturing/218`, `AI4Manufacturing/105` e `AI4Manufacturing/219` (as duas últimas exigem liberação manual).
 5. Mantém cada fonte isolada e registra tamanho, licença e caminho em `data/yolo/datasets-manifest.json`.
 6. Prepara para o detector atual somente a fonte CC0 com anotações YOLO nativas.
 7. Com `--train`, inicia o treinamento após a preparação.
@@ -88,7 +88,7 @@ Para GPU NVIDIA, use `--device 0` somente se PyTorch CUDA compatível já estive
 
 **Importante:** os datasets têm tarefas e esquemas diferentes. A fonte principal CC0 é detecção com caixas YOLO. AI4Manufacturing/217 contém caixas em pixels em registros parquet e requer conversão; AI4Manufacturing/218 é classificação de imagem, não detecção. Ambos são baixados separadamente e não são misturados automaticamente ao treino YOLO. O limite é calculado a partir dos tamanhos publicados pelo Hugging Face e pode diferir ligeiramente do espaço efetivamente ocupado.
 
-Fontes com termos que exigem aprovação ou licença pouco clara não são baixadas automaticamente: LoHi-WELD (Google Drive; licença de dados não identificada no repositório consultado) e Intel Robotic Welding (acesso gated e licença Intel Research Use). Consulte [docs/dataset_yolo.md](docs/dataset_yolo.md).
+Fontes com licença pouco clara não são baixadas automaticamente: LoHi-WELD (Google Drive; licença de dados não identificada no repositório consultado) e Intel Robotic Welding (acesso gated e licença Intel Research Use). Consulte [docs/dataset_yolo.md](docs/dataset_yolo.md).
 
 Após o treinamento bem-sucedido, faça inferência:
 
@@ -113,3 +113,15 @@ O CSV tabular não contém imagens e não treina o detector YOLO. A classe gené
 ## Licença
 
 Consulte [LICENSE](LICENSE) e as licenças individuais de cada dataset antes de redistribuir, publicar ou usar comercialmente os dados.
+
+
+### Fontes adicionais de grande volume (acesso restrito)
+
+O catálogo também tenta baixar, respeitando o teto total, duas fontes maiores. Elas exigem login e aprovação/aceitação manual no Hugging Face; o instalador não tenta contornar o gate e continua com as fontes públicas se o acesso ainda não estiver liberado:
+
+- [AI4Manufacturing/105 — TIG Stainless Steel 304](https://huggingface.co/datasets/AI4Manufacturing/105): cerca de 9,93 GB, 45.058 quadros de 58 execuções TIG e seis rótulos em nível de execução. Licença upstream CC BY-SA 4.0; splits devem permanecer por execução, nunca por quadro.
+- [AI4Manufacturing/219 — BAM hot-cracking metallography](https://huggingface.co/datasets/AI4Manufacturing/219): cerca de 11,6 GB, 609 imagens microscópicas de seções de solda. Licença upstream CC BY 4.0; separar por corpo de prova.
+
+Para habilitar: abra cada página, entre na conta Hugging Face, solicite/aceite as condições e aguarde aprovação. Depois execute novamente `python src/setup_yolo.py`. Se não houver acesso, o instalador registra o item como ignorado e continua. O manifesto indica status e tamanho. Esses conjuntos são auxiliares e não são convertidos para YOLO automaticamente.
+
+O catálogo conhecido soma aproximadamente 22,8 GB se todos os cinco conjuntos forem acessíveis, abaixo do limite padrão de 25 GB. O limite real é recalculado a cada execução usando os tamanhos informados pelo Hub. Não incluí o MIAD (32,3 GB), pois sozinho excede o teto; nem conjuntos com licença/condições incompatíveis ou duplicatas.
