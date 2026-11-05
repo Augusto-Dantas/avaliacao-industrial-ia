@@ -8,6 +8,7 @@ data/*.csv
 
 # YOLO datasets and generated artifacts
 data/raw/
+data/yolo/.download/
 data/yolo/images/
 data/yolo/labels/
 runs/
