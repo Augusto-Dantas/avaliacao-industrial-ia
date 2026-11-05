@@ -49,3 +49,15 @@ O limite é calculado com os tamanhos informados pelo Hugging Face antes do down
 - [Intel Robotic Welding Multimodal Dataset](https://huggingface.co/datasets/IntelLabs/Intel_Robotic_Welding_Multimodal_Dataset): exige aprovação/aceitação explícita da licença Intel Research Use, não comercial. O instalador não aceita termos em nome do usuário e não tenta contornar o gate.
 
 As licenças, proveniência e condições devem ser revistas antes de redistribuir, publicar ou usar comercialmente os dados. Consulte `docs/dataset_yolo.md`.
+
+
+### Fontes adicionais de grande volume (acesso restrito)
+
+O catálogo também tenta baixar, respeitando o teto total, duas fontes maiores. Elas exigem login e aprovação/aceitação manual no Hugging Face; o instalador não tenta contornar o gate e continua com as fontes públicas se o acesso ainda não estiver liberado:
+
+- [AI4Manufacturing/105 — TIG Stainless Steel 304](https://huggingface.co/datasets/AI4Manufacturing/105): cerca de 9,93 GB, 45.058 quadros de 58 execuções TIG e seis rótulos em nível de execução. Licença upstream CC BY-SA 4.0; splits devem permanecer por execução, nunca por quadro.
+- [AI4Manufacturing/219 — BAM hot-cracking metallography](https://huggingface.co/datasets/AI4Manufacturing/219): cerca de 11,6 GB, 609 imagens microscópicas de seções de solda. Licença upstream CC BY 4.0; separar por corpo de prova.
+
+Para habilitar: abra cada página, entre na conta Hugging Face, solicite/aceite as condições e aguarde aprovação. Depois execute novamente `python src/setup_yolo.py`. Se não houver acesso, o instalador registra o item como ignorado e continua. O manifesto indica status e tamanho. Esses conjuntos são auxiliares e não são convertidos para YOLO automaticamente.
+
+O catálogo conhecido soma aproximadamente 22,8 GB se todos os cinco conjuntos forem acessíveis, abaixo do limite padrão de 25 GB. O limite real é recalculado a cada execução usando os tamanhos informados pelo Hub. Não incluí o MIAD (32,3 GB), pois sozinho excede o teto; nem conjuntos com licença/condições incompatíveis ou duplicatas.
