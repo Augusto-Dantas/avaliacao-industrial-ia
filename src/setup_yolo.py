@@ -138,14 +138,14 @@ def prepare_dataset(download_dir: Path, force: bool = False) -> Path:
         print(f"{split}: {image_count} images, {label_count} label files")
 
     yaml_path.write_text(
-        "path: data/yolo\\n"
-        "train: images/train\\n"
-        "val: images/val\\n"
-        "test: images/test\\n"
-        "names:\\n"
-        "  0: bad_weld\\n"
-        "  1: good_weld\\n"
-        "  2: defect\\n",
+        "path: data/yolo\n"
+        "train: images/train\n"
+        "val: images/val\n"
+        "test: images/test\n"
+        "names:\n"
+        "  0: bad_weld\n"
+        "  1: good_weld\n"
+        "  2: defect\n",
         encoding="utf-8",
     )
     return yaml_path
