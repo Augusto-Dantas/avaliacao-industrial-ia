@@ -1,22 +1,22 @@
 # Avaliação Industrial com IA
 
-Projeto de avaliação prática com análise de dados industriais, indicadores OEE, classificação multiclasse de falhas, detecção de anomalias, API demonstrativa e pipeline experimental de visão computacional.
+Projeto de avaliação prática com análise de dados industriais, indicadores OEE, classificação multiclasse de falhas, detecção de anomalias, API demonstrativa e pipeline experimental de visão computacional para soldagem.
 
 ## Escopo
 
-- Análise exploratória de um dataset tabular de produção industrial.
+- Análise exploratória de dataset tabular de produção industrial.
 - Cálculo e interpretação de Disponibilidade, Desempenho, Qualidade e OEE.
-- Classificação multiclasse com Random Forest e tratamento do desbalanceamento por pesos de classe.
-- Detecção de anomalias com Isolation Forest.
-- Inferência operacional e API demonstrativa em FastAPI.
-- Pipeline opcional de detecção visual de defeitos em soldas com Ultralytics YOLO.
-- Análise de segurança/impacto social e limites de uso.
+- Classificação multiclasse e detecção de anomalias.
+- API demonstrativa em FastAPI.
+- Detecção visual experimental com Ultralytics YOLO.
+- Preparação automatizada de múltiplos datasets públicos de soldagem, com limite total configurável de download (padrão: 25 GiB).
+- Documentação de proveniência, licenças, segurança e limites de uso.
 
 ## Requisitos
 
-Python 3.10 ou superior. As dependências da API e da análise tabular estão em `requirements.txt`. As dependências pesadas de visão computacional ficam separadas em `requirements-vision.txt`.
+Python 3.10 ou superior. As dependências tabulares/API estão em `requirements.txt`; as dependências pesadas de visão ficam em `requirements-vision.txt`.
 
-## Instalação e execução principal
+## Instalação principal
 
 Na raiz do repositório:
 
@@ -37,75 +37,79 @@ python src/analysis.py
 python src/train.py
 python src/inference.py
 
-# Inicie a API
+# API
 uvicorn src.api:app --host 0.0.0.0 --port 8000
 ```
 
-Com a API em execução, abra **http://localhost:8000**. A raiz mostra os links úteis: `/health`, `/docs`, `/redoc`, `/v1/infer` e `/v1/jobs/{job_id}`.
+Abra http://localhost:8000, /docs, /redoc ou /health.
 
-> `0.0.0.0` é o endereço de escuta do servidor; no navegador local, use `localhost` ou `127.0.0.1`.
+## Instalação automatizada dos datasets YOLO
 
-## YOLO: instalação automatizada
-
-O pipeline visual agora pode preparar tudo automaticamente. Na raiz do repositório, com a virtualenv ativada, execute:
+Com a virtualenv ativada, execute na raiz:
 
 ```bash
 python src/setup_yolo.py --train
 ```
 
-Esse comando:
-
-1. Mantém uma instalação PyTorch funcional; se PyTorch estiver ausente/quebrado, instala a versão CPU para evitar baixar pacotes CUDA desnecessários.
+O instalador:
+1. Mantém PyTorch funcional ou instala a build CPU caso esteja ausente/quebrada.
 2. Instala Ultralytics e Hugging Face Hub.
-3. Baixa o dataset público `rikkarth/welding-defect-object-detection` (aproximadamente 104 MB).
-4. Converte a estrutura `train/valid/test` do download para `data/yolo/images` e `data/yolo/labels`.
-5. Gera `data/yolo/data.yaml` com as classes `bad_weld`, `good_weld` e `defect`.
-6. Inicia o treinamento com `yolo26n.pt`, 100 épocas, 640 px, batch 8 e CPU.
+3. Consulta os tamanhos dos repositórios e aplica limite combinado padrão de 25 GiB.
+4. Baixa as três fontes públicas catalogadas: `rikkarth/welding-defect-object-detection`, `AI4Manufacturing/217` e `AI4Manufacturing/218`.
+5. Mantém cada fonte isolada e registra tamanho, licença e caminho em `data/yolo/datasets-manifest.json`.
+6. Prepara para o detector atual somente a fonte CC0 com anotações YOLO nativas.
+7. Com `--train`, inicia o treinamento após a preparação.
 
-O primeiro download pode demorar. O dataset fica em `data/yolo/.download/`; imagens, labels, pesos e resultados continuam locais e não são enviados ao Git.
-
-Para somente instalar as dependências e preparar o dataset, sem treinar:
+Para apenas baixar/preparar, sem treinar:
 
 ```bash
 python src/setup_yolo.py
 ```
 
-Para usar GPU NVIDIA, caso o PyTorch CUDA já esteja corretamente instalado no ambiente:
+Ajustar o teto:
 
 ```bash
-python src/setup_yolo.py --train --device 0
+python src/setup_yolo.py --max-gb 10
 ```
 
-Para ajustar o treinamento:
+Selecionar fontes:
+
+```bash
+python src/setup_yolo.py --datasets rikkarth/welding-defect-object-detection AI4Manufacturing/217
+```
+
+Treinar com parâmetros próprios:
 
 ```bash
 python src/setup_yolo.py --train --epochs 100 --imgsz 640 --batch 8 --device cpu
 ```
 
-Se quiser substituir um dataset local já preparado e baixar uma cópia nova, use `--force`. Isso remove somente `data/yolo/images` e `data/yolo/labels` gerados localmente, além do cache baixado.
+Para GPU NVIDIA, use `--device 0` somente se PyTorch CUDA compatível já estiver instalado. O padrão é CPU.
 
-Após o treinamento, execute a inferência em uma imagem sua:
+**Importante:** os datasets têm tarefas e esquemas diferentes. A fonte principal CC0 é detecção com caixas YOLO. AI4Manufacturing/217 contém caixas em pixels em registros parquet e requer conversão; AI4Manufacturing/218 é classificação de imagem, não detecção. Ambos são baixados separadamente e não são misturados automaticamente ao treino YOLO. O limite é calculado a partir dos tamanhos publicados pelo Hugging Face e pode diferir ligeiramente do espaço efetivamente ocupado.
+
+Fontes com termos que exigem aprovação ou licença pouco clara não são baixadas automaticamente: LoHi-WELD (Google Drive; licença de dados não identificada no repositório consultado) e Intel Robotic Welding (acesso gated e licença Intel Research Use). Consulte [docs/dataset_yolo.md](docs/dataset_yolo.md).
+
+Após o treinamento bem-sucedido, faça inferência:
 
 ```bash
 python src/predict_yolo.py --weights runs/detect/welding-yolo/weights/best.pt --source caminho/para/imagem.jpg
 ```
 
-O dataset do Hugging Face informa 2.028 imagens anotadas, três classes e licença CC0. A classe genérica `defect` não deve ser interpretada automaticamente como porosidade ou causa específica. Consulte [docs/dataset_yolo.md](docs/dataset_yolo.md) para limitações, fontes e critérios de avaliação.
-
 ## Estrutura
 
-- `src/`: análise, treinamento, preparação automática do YOLO, inferência e API.
-- `docs/`: relatório técnico, documentação da API, guia do dataset YOLO e notas éticas.
-- `data/`: CSV tabular e dataset YOLO local (imagens e anotações não são versionados).
-- `models/`: artefatos produzidos pelo treinamento tabular.
+- `src/`: análise, treino, preparação dos datasets, inferência e API.
+- `docs/`: relatório técnico, documentação da API, datasets e notas éticas.
+- `data/`: CSV tabular e dados visuais locais (não versionados).
+- `models/`: artefatos do treinamento tabular.
 - `runs/`: resultados e pesos YOLO locais.
 
 ## Resultados e limitações
 
-O baseline tabular usa split estratificado aleatório 75/25. Métricas observadas nesse split: balanced accuracy de 96,51% e macro-F1 de 93,94%. Esses números não demonstram generalização temporal ou por lote; faça essa validação antes de qualquer uso real. O modelo exclui OEE, seus componentes, contagens finais e rótulos auxiliares das features para reduzir vazamento.
+O baseline tabular usa split estratificado aleatório 75/25. Métricas observadas nesse split: balanced accuracy de 96,51% e macro-F1 de 93,94%. Esses números não demonstram generalização temporal ou por lote; faça essa validação antes de qualquer uso real.
 
-Isolation Forest é uma ferramenta de triagem, não um diagnóstico de falha. A API é demonstrativa: a fila é mantida em memória e não oferece persistência, autenticação ou garantias de produção. O dataset tabular não contém imagens e não treina o detector YOLO. Nenhuma saída comanda máquinas: a decisão humana é obrigatória.
+O CSV tabular não contém imagens e não treina o detector YOLO. A classe genérica `defect` não deve ser interpretada automaticamente como porosidade ou causa específica. Fotografias convencionais não comprovam sobrecarga elétrica, vibração ou desvio térmico interno. Nenhuma saída comanda máquinas: a decisão humana é obrigatória.
 
 ## Licença
 
-Consulte [LICENSE](LICENSE).
+Consulte [LICENSE](LICENSE) e as licenças individuais de cada dataset antes de redistribuir, publicar ou usar comercialmente os dados.
