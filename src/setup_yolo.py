@@ -51,6 +51,24 @@ DATASETS = [
         "description": "61,670 laser-weld seam strips; image-level ok/defective labels, not bounding boxes.",
         "train_yolo": False,
     },
+    {
+        "id": "AI4Manufacturing/105",
+        "folder": "ai4manufacturing-105-tig-ss304",
+        "license": "CC BY-SA 4.0 (upstream Kaggle; gated research access)",
+        "task": "run-level-image-classification",
+        "description": "45,058 TIG SS304 frames from 58 runs; six run-level labels; about 9.93 GB; run-wise splits required.",
+        "gated": True,
+        "train_yolo": False,
+    },
+    {
+        "id": "AI4Manufacturing/219",
+        "folder": "ai4manufacturing-219-bam-hot-cracking",
+        "license": "CC BY 4.0 (upstream Zenodo; gated access)",
+        "task": "metallography-crack-inspection",
+        "description": "609 metallographic weld cross-section images; hot-cracking microscopy; about 11.6 GB; specimen-wise splits required.",
+        "gated": True,
+        "train_yolo": False,
+    },
 ]
 
 
@@ -99,44 +117,65 @@ def download_catalog(max_gb: float, selected: list[str], force: bool = False) ->
     planned = []
     total = 0
     for item in chosen:
-        size = dataset_size_bytes(api, item["id"])
+        try:
+            size = dataset_size_bytes(api, item["id"])
+        except Exception as exc:
+            print(f"SKIP {item['id']}: cannot verify repository size ({exc}).")
+            continue
         if total + size > max_gb * 1_000_000_000:
             print(
                 f"SKIP {item['id']}: {size / 1_000_000_000:.2f} GB would exceed "
-                f"the {max_gb:.2f} GiB total limit."
+                f"the {max_gb:.2f} GB total limit."
             )
             continue
         planned.append((item, size))
         total += size
 
-    print(f"Selected download budget: {total / 1_000_000_000:.2f} GiB / {max_gb:.2f} GiB")
+    print(f"Selected download budget: {total / 1_000_000_000:.2f} GB / {max_gb:.2f} GB")
     manifest = []
     for item, size in planned:
         destination = SOURCES_DIR / item["folder"]
         marker = destination / ".download-complete.json"
+        status = "downloaded"
         if marker.exists() and not force:
             print(f"Already downloaded: {item['id']} (use --force to refresh)")
+            status = "already-present"
         else:
             print(
                 f"Downloading {item['id']} ({size / 1024**2:.1f} MiB) "
                 f"[{item['license']}]"
             )
-            snapshot_download(
-                repo_id=item["id"], repo_type="dataset",
-                local_dir=str(destination),
-            )
-            marker.write_text(json.dumps({
-                "repo_id": item["id"], "license": item["license"],
-                "size_bytes_at_download": size,
-            }, indent=2), encoding="utf-8")
+            try:
+                snapshot_download(
+                    repo_id=item["id"], repo_type="dataset",
+                    local_dir=str(destination),
+                )
+                marker.write_text(json.dumps({
+                    "repo_id": item["id"], "license": item["license"],
+                    "size_bytes_at_download": size,
+                }, indent=2), encoding="utf-8")
+            except Exception as exc:
+                status = "skipped-access-or-download-error"
+                print(
+                    f"SKIP {item['id']}: download unavailable. If gated, open "
+                    f"https://huggingface.co/datasets/{item['id']}, request/accept "
+                    f"access, then rerun. Details: {exc}"
+                )
+                if destination.exists() and not marker.exists():
+                    shutil.rmtree(destination, ignore_errors=True)
         manifest.append({
-            **item, "size_bytes": size, "local_path": str(destination.relative_to(ROOT)),
+            **item, "size_bytes": size, "status": status,
+            "local_path": str(destination.relative_to(ROOT)),
         })
 
     (TARGET_DIR / "datasets-manifest.json").write_text(
         json.dumps({
             "max_gib": max_gb,
             "planned_bytes": total,
+            "downloaded_bytes": sum(
+                item["size_bytes"] for item in manifest
+                if item["status"] in {"downloaded", "already-present"}
+            ),
             "datasets": manifest,
             "note": "Downloaded datasets remain isolated; only the CC0 native-YOLO source is prepared for the current detector.",
         }, indent=2, ensure_ascii=False),
@@ -217,7 +256,7 @@ def main() -> None:
         description="Install YOLO dependencies and download welding datasets within a disk quota."
     )
     parser.add_argument("--max-gb", type=float, default=25.0,
-                        help="Maximum combined dataset download size in GiB (default: 25).")
+                        help="Maximum combined dataset download size in GB (default: 25).")
     parser.add_argument("--datasets", nargs="+", choices=[d["id"] for d in DATASETS],
                         default=[d["id"] for d in DATASETS],
                         help="Dataset IDs to download (default: all catalog entries).")
