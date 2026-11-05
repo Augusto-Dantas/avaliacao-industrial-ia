@@ -9,7 +9,7 @@ Projeto de avaliação prática com análise de dados industriais, indicadores O
 - Classificação multiclasse e detecção de anomalias.
 - API demonstrativa em FastAPI.
 - Detecção visual experimental com Ultralytics YOLO.
-- Preparação automatizada de múltiplos datasets públicos de soldagem, com limite total configurável de download (padrão: 25 GiB).
+- Preparação automatizada de múltiplos datasets públicos de soldagem, com limite total configurável de download (padrão: 25 GB).
 - Documentação de proveniência, licenças, segurança e limites de uso.
 
 ## Requisitos
