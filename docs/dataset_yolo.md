@@ -1,73 +1,94 @@
-# Dataset YOLO híbrido para soldagem
+# Datasets de soldagem: instalação, proveniência e limites
 
-## Preparação automatizada
+## Instalação automatizada
 
-Na raiz do repositório, com a virtualenv ativada, execute:
+Na raiz do projeto:
 
 ```bash
 python src/setup_yolo.py --train
 ```
 
-O utilitário instala as dependências de visão, baixa o dataset público `rikkarth/welding-defect-object-detection` do Hugging Face, organiza as imagens/anotações e escreve `data/yolo/data.yaml`. O download inicial tem aproximadamente 104 MB. Por padrão, o treinamento usa CPU para evitar dependência de CUDA.
+Por padrão, o instalador:
+1. Mantém PyTorch existente se estiver funcional; caso contrário instala a build CPU para evitar CUDA desnecessário.
+2. Instala Ultralytics e Hugging Face Hub.
+3. Consulta o tamanho total dos arquivos dos repositórios selecionados antes do download.
+4. Baixa os datasets públicos catalogados até o limite padrão de 25 GiB.
+5. Registra origem, licença declarada, tamanho e diretório em `data/yolo/datasets-manifest.json`.
+6. Prepara para YOLO somente a fonte CC0 com anotações nativas YOLO.
+7. Opcionalmente inicia o treinamento.
 
-Para preparar sem treinar, omita `--train`. Para GPU NVIDIA, use `--device 0` somente se o PyTorch CUDA compatível já estiver instalado. Use `--force` para substituir os dados locais preparados.
+O download usa cache do Hugging Face e pode ser retomado. O teto pode ser alterado com `--max-gb`; selecione fontes com `--datasets`. O cálculo usa o tamanho informado pelo Hub e pode diferir ligeiramente do espaço efetivamente ocupado.
 
-Fonte do dataset: https://huggingface.co/datasets/rikkarth/welding-defect-object-detection. O cartão informa 2.028 imagens, splits train/valid/test, três classes e licença CC0. Verifique o cartão antes de redistribuir ou publicar derivados.
+## Catálogo baixado automaticamente
 
-## Objetivo e limites
+### 1. Welding Defect Object Detection
 
-O CSV industrial original é tabular e **não contém imagens**; portanto, ele não treina o detector visual. A detecção visual deve ser avaliada separadamente da classificação tabular.
+- Repositório: https://huggingface.co/datasets/rikkarth/welding-defect-object-detection
+- Licença declarada: CC0-1.0.
+- 2.028 imagens e 5.686 caixas, formato YOLO e COCO.
+- Classes originais: `bad_weld`, `good_weld`, `defect`.
+- Única fonte do catálogo que o instalador atual integra automaticamente ao treinamento YOLO.
 
-Uma fotografia convencional pode mostrar porosidade aberta, depósitos, respingos e descontinuidades superficiais. Ela não confirma, por si só, sobrecarga elétrica, vibração do equipamento ou desvio térmico interno. Essas condições exigem sensores, termografia ou dados sincronizados.
+### 2. AI4Manufacturing/217 — SMAW surface defects
 
-## Classes e anotação
+- Repositório: https://huggingface.co/datasets/AI4Manufacturing/217
+- 448 imagens, 3 classes: `spatter`, `undercut`, `slag inclusion`.
+- Caixas em coordenadas de pixels no formato COCO xywh, dentro do schema parquet.
+- Licença upstream declarada: CC BY 4.0 (Mendeley Data).
+- É baixado e mantido isolado. Ainda requer extração/conversão validada de parquet e normalização de caixas antes de treinar.
 
-O dataset automatizado usa exatamente as classes originais:
-- `0: bad_weld`
-- `1: good_weld`
-- `2: defect`
+### 3. AI4Manufacturing/218 — laser weld seams
 
-Não renomeie a classe genérica `defect` como porosidade ou causa específica sem inspeção e nova anotação.
+- Repositório: https://huggingface.co/datasets/AI4Manufacturing/218
+- 61.670 tiras de solda laser, rótulos de imagem `ok` / `defective`.
+- Licença upstream declarada: CC BY 4.0 (Zenodo).
+- É classificação em nível de imagem, não detecção de objetos. Fica isolado e não é misturado ao treino YOLO.
 
-Ultralytics YOLO Detection usa um arquivo `.txt` por imagem. Cada linha representa:
+Os três datasets têm tarefas, domínios e esquemas diferentes. O instalador deliberadamente não concatena labels de classes diferentes nem transforma rótulos de imagem em bounding boxes.
 
-```text
-<class_id> <x_center> <y_center> <width> <height>
+## Fontes não baixadas automaticamente
+
+- LoHi-WELD: https://github.com/SylvioBlock/LoHi-Weld — 3.022 imagens reais de cordões de solda, com anotações. O pacote está em Google Drive e o repositório consultado não apresenta licença clara para os dados. Requer avaliação manual dos termos e download manual.
+- Intel Robotic Welding Multimodal Dataset: https://huggingface.co/datasets/IntelLabs/Intel_Robotic_Welding_Multimodal_Dataset — contém vídeo, áudio, séries temporais e imagens. A licença Intel Research Use exige aprovação/aceitação e limita o uso à pesquisa; não é baixado automaticamente nem pode ser usado comercialmente.
+
+## Comandos
+
+```bash
+python src/setup_yolo.py
+python src/setup_yolo.py --max-gb 10
+python src/setup_yolo.py --datasets rikkarth/welding-defect-object-detection AI4Manufacturing/217
+python src/setup_yolo.py --train --epochs 100 --imgsz 640 --batch 8 --device cpu
+python src/setup_yolo.py --train --device 0
+python src/setup_yolo.py --force
 ```
 
-As coordenadas são normalizadas entre 0 e 1. Imagens sem defeitos podem não ter arquivo de rótulo.
-
-## Estrutura local gerada
+## Estrutura
 
 ```text
 data/yolo/
 ├── data.yaml
-├── .download/
-├── images/
-│   ├── train/
-│   ├── val/
-│   └── test/
-└── labels/
-    ├── train/
-    ├── val/
-    └── test/
+├── datasets-manifest.json
+├── .download/                  # cache do Hub
+├── sources/
+│   ├── welding-defect-object-detection/
+│   ├── ai4manufacturing-217-smaw/
+│   └── ai4manufacturing-218-laser-weld/
+├── images/{train,val,test}/    # dataset YOLO principal convertido
+└── labels/{train,val,test}/
 ```
 
-Imagens, anotações e pesos não são versionados no Git. O utilitário mantém uma cópia de download em `.download/` para evitar baixar novamente os arquivos.
+Imagens, rótulos, cache e pesos não são versionados no Git.
 
-## Imagens sintéticas e avaliação
+## Avaliação e segurança
 
-Imagens sintéticas podem complementar apenas o treinamento. Cada imagem sintética precisa de anotação revisada por pessoa; não use a descrição do prompt como rótulo automático.
+A validação e o teste final devem permanecer independentes e, idealmente, compostos por imagens reais não vistas. Não use versões aumentadas da mesma imagem em splits distintos. Relate mAP50, mAP50-95, precisão, recall e matriz de confusão por classe. A classe genérica `defect` não deve ser renomeada como porosidade ou outra causa sem nova anotação.
 
-- Não apresentar imagem gerada como fotografia industrial real.
-- Não duplicar uma imagem real e sua variante aumentada entre splits diferentes.
-- Não colocar sintéticas na validação ou no teste final de desempenho.
-- Manter um teste final composto exclusivamente por imagens reais independentes.
-- Relatar mAP50, mAP50-95, precisão, recall e matriz de confusão por classe.
+Fotografias convencionais não comprovam sobrecarga elétrica, vibração ou desvio térmico interno. Essas condições requerem sensores, termografia ou dados sincronizados. O modelo é experimental e não deve comandar máquinas; decisões operacionais exigem supervisão e validação humanas.
 
-Um detector experimental não deve acionar ou parar máquinas; toda decisão operacional requer validação e supervisão humana.
+## Referências
 
-## Fonte adicional
-
-LoHi-WELD contém imagens reais de cordões de solda com anotações manuais. Seu download e seus termos são separados; não é baixado pelo utilitário automático:
-https://github.com/SylvioBlock/LoHi-Weld
+- https://huggingface.co/datasets/rikkarth/welding-defect-object-detection
+- https://huggingface.co/datasets/AI4Manufacturing/217
+- https://huggingface.co/datasets/AI4Manufacturing/218
+- https://github.com/SylvioBlock/LoHi-Weld
+- https://huggingface.co/datasets/IntelLabs/Intel_Robotic_Welding_Multimodal_Dataset
