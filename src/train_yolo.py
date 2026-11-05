@@ -67,6 +67,12 @@ def validate_dataset(data_yaml: Path) -> None:
         if not images:
             empty.append(f"{split}: {split_path} (no supported image files)")
 
+        labels_path = dataset_root / "labels" / split
+        if not labels_path.is_dir():
+            missing.append(f"{split} labels: {labels_path}")
+        elif not any(labels_path.rglob("*.txt")):
+            empty.append(f"{split} labels: {labels_path} (no YOLO .txt annotations)")
+
     if missing or empty:
         details = "\n".join([*(f"- Missing: {item}" for item in missing),
                               *(f"- Empty: {item}" for item in empty)])
