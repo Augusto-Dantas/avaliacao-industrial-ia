@@ -1,0 +1,4 @@
+# Optional dependencies for the YOLO image-detection pipeline.
+# Install CPU-only PyTorch first if you do not have a CUDA-capable NVIDIA GPU:
+# pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+ultralytics>=8.4.0
