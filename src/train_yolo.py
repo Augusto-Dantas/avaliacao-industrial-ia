@@ -1,4 +1,4 @@
-"""Train an Ultralytics YOLO detector on an annotated welding dataset.
+"""Train an Ultralytics YOLO detector with persistent checkpoints.
 
 The dataset is not committed. Prepare it locally as described in
 docs/dataset_yolo.md before starting a training run.
@@ -27,7 +27,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--device", default=None,
                         help="Examples: 0, cpu. Omit for automatic selection.")
     parser.add_argument("--workers", type=int, default=4)
-    parser.add_argument("--name", default="welding-yolo")
+    parser.add_argument("--name", default="welding-yolo",
+                        help="Run name under runs/detect/")
+    parser.add_argument("--save-period", type=int, default=1,
+                        help="Save a checkpoint every N epochs (default: 1; -1 disables periodic saves).")
+    parser.add_argument("--resume", action="store_true",
+                        help="Resume this run from runs/detect/NAME/weights/last.pt.")
+    parser.add_argument("--resume-from", type=Path, default=None,
+                        help="Resume from a specific last.pt checkpoint.")
     return parser.parse_args()
 
 
@@ -93,9 +100,22 @@ def main() -> None:
     data_yaml = args.data.expanduser().resolve()
     if args.epochs < 1 or args.imgsz < 32 or args.batch < 1 or args.workers < 0:
         raise ValueError("epochs/batch must be positive, imgsz >= 32 and workers >= 0.")
+    if args.save_period == 0 or args.save_period < -1:
+        raise ValueError("--save-period must be -1 or a positive integer.")
+    if args.resume and args.resume_from:
+        raise ValueError("Use either --resume or --resume-from, not both.")
 
-    # Fail early with an actionable message, before downloading weights or importing torch.
+    # Fail early, before downloading weights or importing torch.
     validate_dataset(data_yaml)
+
+    run_dir = ROOT / "runs/detect" / args.name
+    checkpoint = args.resume_from.expanduser().resolve() if args.resume_from else run_dir / "weights/last.pt"
+    resume = args.resume or args.resume_from is not None
+    if resume and not checkpoint.is_file():
+        raise FileNotFoundError(
+            f"Resume checkpoint not found: {checkpoint}\n"
+            "Start a new run without --resume, or pass a valid --resume-from path."
+        )
 
     try:
         from ultralytics import YOLO
@@ -104,7 +124,7 @@ def main() -> None:
             "YOLO dependencies are not installed. Run: pip install -r requirements-vision.txt"
         ) from exc
 
-    model = YOLO(args.weights)
+    model = YOLO(str(checkpoint) if resume else args.weights)
     train_args = {
         "data": str(data_yaml),
         "epochs": args.epochs,
@@ -116,13 +136,21 @@ def main() -> None:
         "exist_ok": True,
         "plots": True,
         "seed": 42,
+        "save": True,
+        "save_period": args.save_period,
     }
+    if resume:
+        train_args["resume"] = True
+        print(f"Resuming training from: {checkpoint}")
     if args.device:
         train_args["device"] = args.device
 
     results = model.train(**train_args)
     best = Path(model.trainer.best).resolve()
-    print(f"Training complete. Best weights: {best}")
+    last = Path(model.trainer.last).resolve()
+    print("Training complete.")
+    print(f"Best weights: {best}")
+    print(f"Latest checkpoint: {last}")
     print(f"Results directory: {Path(results.save_dir).resolve()}")
 
 
