@@ -58,7 +58,7 @@ O instalador:
 4. Baixa as três fontes públicas catalogadas: `rikkarth/welding-defect-object-detection`, `AI4Manufacturing/217`, `AI4Manufacturing/218`, `AI4Manufacturing/105` e `AI4Manufacturing/219` (as duas últimas exigem liberação manual).
 5. Mantém cada fonte isolada e registra tamanho, licença e caminho em `data/yolo/datasets-manifest.json`.
 6. Prepara para o detector atual somente a fonte CC0 com anotações YOLO nativas.
-7. Com `--train`, inicia o treinamento após a preparação.
+7. Com `--train`, inicia o treinamento após a preparação; salva `last.pt` e `best.pt` e checkpoints periódicos para retomada.
 
 Para apenas baixar/preparar, sem treinar:
 
@@ -82,6 +82,12 @@ Treinar com parâmetros próprios:
 
 ```bash
 python src/setup_yolo.py --train --epochs 100 --imgsz 640 --batch 8 --device cpu
+
+# Salvar checkpoints a cada época (padrão) e retomar após interrupção
+python src/setup_yolo.py --train --resume
+
+# Retomar de um checkpoint específico
+python src/setup_yolo.py --train --resume-from runs/detect/welding-yolo/weights/last.pt
 ```
 
 Para GPU NVIDIA, use `--device 0` somente se PyTorch CUDA compatível já estiver instalado. O padrão é CPU.
@@ -90,7 +96,7 @@ Para GPU NVIDIA, use `--device 0` somente se PyTorch CUDA compatível já estive
 
 Fontes com licença pouco clara não são baixadas automaticamente: LoHi-WELD (Google Drive; licença de dados não identificada no repositório consultado) e Intel Robotic Welding (acesso gated e licença Intel Research Use). Consulte [docs/dataset_yolo.md](docs/dataset_yolo.md).
 
-Após o treinamento bem-sucedido, faça inferência:
+Os pesos e checkpoints ficam em `runs/detect/welding-yolo/weights/`. `last.pt` é atualizado durante o treinamento e `best.pt` guarda o melhor resultado de validação. Se o processo for interrompido, execute novamente com `--resume`; para outro nome de execução, informe o mesmo `--name` usado originalmente. Não apague a pasta `runs/detect/` antes de retomar.\n\nApós o treinamento bem-sucedido, faça inferência:
 
 ```bash
 python src/predict_yolo.py --weights runs/detect/welding-yolo/weights/best.pt --source caminho/para/imagem.jpg
