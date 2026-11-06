@@ -15,7 +15,7 @@ Por padrão, o instalador:
 4. Baixa os datasets públicos catalogados até o limite padrão de 25 GB.
 5. Registra origem, licença declarada, tamanho e diretório em `data/yolo/datasets-manifest.json`.
 6. Prepara para YOLO somente a fonte CC0 com anotações nativas YOLO.
-7. Opcionalmente inicia o treinamento.
+7. Opcionalmente inicia o treinamento, salvando `last.pt`, `best.pt` e checkpoints periódicos para recuperação.
 
 O download usa cache do Hugging Face e pode ser retomado. O teto pode ser alterado com `--max-gb`; selecione fontes com `--datasets`. O cálculo usa o tamanho informado pelo Hub e pode diferir ligeiramente do espaço efetivamente ocupado.
 
@@ -58,11 +58,13 @@ python src/setup_yolo.py
 python src/setup_yolo.py --max-gb 10
 python src/setup_yolo.py --datasets rikkarth/welding-defect-object-detection AI4Manufacturing/217
 python src/setup_yolo.py --train --epochs 100 --imgsz 640 --batch 8 --device cpu
+python src/setup_yolo.py --train --resume
+python src/setup_yolo.py --train --resume-from runs/detect/welding-yolo/weights/last.pt
 python src/setup_yolo.py --train --device 0
 python src/setup_yolo.py --force
 ```
 
-## Estrutura
+## Checkpoints e retomada do treinamento\n\nO treinamento salva automaticamente `last.pt` (estado mais recente), `best.pt` (melhor desempenho na validação) e, por padrão, um checkpoint periódico a cada época. Os arquivos ficam em `runs/detect/NAME/weights/`. Para retomar, mantenha o mesmo nome de execução e use `--resume`; o Ultralytics restaura o estado do otimizador e a época, em vez de iniciar do zero. Também é possível indicar um arquivo `last.pt` com `--resume-from`.\n\nNo treinamento direto, use `python src/train_yolo.py --resume`. Para salvar a cada N épocas, use `--save-period N`; `--save-period -1` desativa apenas os checkpoints periódicos (os pesos `last.pt` e `best.pt` continuam habilitados). A retomada exige que o checkpoint exista e que o dataset permaneça acessível no mesmo caminho.\n\n## Estrutura
 
 ```text
 data/yolo/
