@@ -270,12 +270,22 @@ def main() -> None:
     parser.add_argument("--epochs", type=int, default=100)
     parser.add_argument("--imgsz", type=int, default=640)
     parser.add_argument("--batch", type=int, default=8)
+    parser.add_argument("--save-period", type=int, default=1,
+                        help="Save YOLO checkpoints every N epochs; -1 disables periodic saves.")
+    parser.add_argument("--resume", action="store_true",
+                        help="Resume runs/detect/welding-yolo/weights/last.pt.")
+    parser.add_argument("--resume-from", type=Path, default=None,
+                        help="Resume from a specific last.pt checkpoint.")
     parser.add_argument("--device", default="cpu",
                         help="Use cpu by default; use 0 only with compatible CUDA PyTorch.")
     args = parser.parse_args()
 
     if args.max_gb <= 0 or args.epochs < 1 or args.imgsz < 32 or args.batch < 1:
         parser.error("--max-gb, --epochs and --batch must be positive; --imgsz must be >= 32.")
+    if args.save_period == 0 or args.save_period < -1:
+        parser.error("--save-period must be -1 or a positive integer.")
+    if args.resume and args.resume_from:
+        parser.error("Use either --resume or --resume-from, not both.")
     if not args.no_install:
         install_dependencies()
 
@@ -299,7 +309,9 @@ def main() -> None:
             sys.executable, "src/train_yolo.py", "--data", str(yaml_path),
             "--weights", args.weights, "--epochs", str(args.epochs),
             "--imgsz", str(args.imgsz), "--batch", str(args.batch),
-            "--device", args.device,
+            "--device", args.device, "--save-period", str(args.save_period),
+            *(["--resume"] if args.resume else []),
+            *(["--resume-from", str(args.resume_from)] if args.resume_from else []),
         ])
     else:
         print("Dataset preparation complete. Add --train to start YOLO training.")
