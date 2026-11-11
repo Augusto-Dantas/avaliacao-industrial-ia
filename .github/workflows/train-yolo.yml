@@ -1,0 +1,89 @@
+name: Train welding YOLO model
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/train-yolo.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: welding-yolo-training
+  cancel-in-progress: false
+
+jobs:
+  train:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements-vision.txt
+
+      - name: Install CPU training dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install -r requirements-vision.txt pyyaml
+
+      - name: Download and prepare the licensed native-YOLO dataset
+        run: |
+          python src/setup_yolo.py --no-install \
+            --datasets rikkarth/welding-defect-object-detection
+
+      - name: Train detector
+        run: |
+          python src/train_yolo.py \
+            --data data/yolo/data.yaml \
+            --weights yolo26n.pt \
+            --epochs 50 \
+            --imgsz 640 \
+            --batch 8 \
+            --workers 2 \
+            --device cpu \
+            --name welding-yolo \
+            --save-period 5
+
+      - name: Package trained weights and evaluation outputs
+        if: always()
+        run: |
+          mkdir -p training-output
+          if [ -d runs/detect/welding-yolo ]; then
+            cp -a runs/detect/welding-yolo/. training-output/
+          fi
+          if [ -f runs/detect/welding-yolo/weights/best.pt ]; then
+            cp runs/detect/welding-yolo/weights/best.pt training-output/best.pt
+          fi
+          if [ -f runs/detect/welding-yolo/weights/last.pt ]; then
+            cp runs/detect/welding-yolo/weights/last.pt training-output/last.pt
+          fi
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          p = Path("training-output")
+          p.mkdir(exist_ok=True)
+          (p / "run-status.json").write_text(json.dumps({
+              "workflow_run_id": os.environ.get("GITHUB_RUN_ID"),
+              "commit": os.environ.get("GITHUB_SHA"),
+              "best_weights_present": (p / "best.pt").is_file(),
+              "last_weights_present": (p / "last.pt").is_file(),
+          }, indent=2))
+          PY
+
+      - name: Upload weights and training report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: welding-yolo-training
+          path: training-output/
+          if-no-files-found: warn
+          retention-days: 30
