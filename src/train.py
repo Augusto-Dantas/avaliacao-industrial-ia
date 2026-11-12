@@ -26,7 +26,11 @@ def find_dataset() -> Path:
     for candidate in CANDIDATE_DATA:
         if candidate.is_file():
             return candidate
-    locations = ", ".join(str(path.relative_to(ROOT)) for path in CANDIDATE_DATA)
+    # Candidates may be redirected to temporary directories by tests or callers.
+    locations = ", ".join(
+        str(path.relative_to(ROOT)) if path.is_relative_to(ROOT) else str(path)
+        for path in CANDIDATE_DATA
+    )
     raise FileNotFoundError(
         f"Dataset não encontrado. Coloque o CSV em uma destas pastas: {locations}"
     )
