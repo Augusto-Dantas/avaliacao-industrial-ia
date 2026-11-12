@@ -46,6 +46,43 @@ uvicorn src.api:app --host 0.0.0.0 --port 8000
 
 Acesse http://localhost:8000/docs. Consulte [docs/api.md](docs/api.md) para submeter e consultar trabalhos assíncronos.
 
+## Pipeline automatizado e testes
+
+O script `scripts/run_pipeline.sh` automatiza instalação das dependências, análise, treinamento tabular e testes. Execute na raiz do repositório:
+
+```bash
+bash scripts/run_pipeline.sh
+```
+
+O comando cria `.venv/` automaticamente quando necessário. Para executar no Google Colab, onde as dependências costumam ser instaladas no ambiente ativo:
+
+```bash
+USE_SYSTEM_PYTHON=1 bash scripts/run_pipeline.sh
+```
+
+Para iniciar a API depois de concluir o pipeline:
+
+```bash
+bash scripts/run_pipeline.sh --serve
+```
+
+Para executar também o pipeline YOLO (download de dataset e treinamento visual, que exige mais espaço e tempo):
+
+```bash
+bash scripts/run_pipeline.sh --vision --vision-epochs 50
+```
+
+O treinamento YOLO é opcional e separado do treinamento tabular. Ele usa o dataset auxiliar genérico e não comprova detecção específica de porosidade nem análise térmica HAZ.
+
+Para executar somente os testes:
+
+```bash
+python -m pip install -r requirements-dev.txt
+python -m pytest
+```
+
+Os testes cobrem descoberta do dataset, estratégia de divisão temporal/fallback e endpoints/validação da API. O pipeline termina com código diferente de zero se análise, treinamento ou testes falharem.
+
 ## Validação e interpretação dos modelos
 
 O treinamento prefere holdout temporal (75% inicial para treino e 25% final para teste), quando todas as classes estão presentes nos dois períodos. Se isso não for possível, registra explicitamente o fallback para split aleatório estratificado em `models/metrics.json`. O fallback não comprova generalização temporal. Mesmo o holdout temporal ainda precisa de validação independente por lote, máquina e período antes de qualquer uso operacional.
