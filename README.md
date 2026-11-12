@@ -54,7 +54,13 @@ O script `scripts/run_pipeline.sh` automatiza instalação das dependências, an
 bash scripts/run_pipeline.sh
 ```
 
-O comando cria `.venv/` automaticamente quando necessário. Para executar no Google Colab, onde as dependências costumam ser instaladas no ambiente ativo:
+O comando cria `.venv/` automaticamente quando necessário. Para executar no Google Colab, selecione **Ambiente de execução → Alterar tipo de ambiente de execução → T4 GPU**. A T4 é recomendada para YOLO; análise e modelos tabulares funcionam em CPU. Abra o notebook automatizado:
+
+[Abrir notebook no Google Colab](https://colab.research.google.com/github/Augusto-Dantas/avaliacao-industrial-ia/blob/main/notebooks/avaliacao_industrial_colab.ipynb)
+
+O notebook clona o repositório, instala dependências no Python gerenciado pelo Colab (sem criar ambiente virtual), executa análise, treinamento tabular e testes e empacota os artefatos. O treino YOLO é opcional e fica desativado por padrão; altere RUN_VISION = True na primeira célula para ativá-lo. Com T4, CUDA usa o dispositivo 0. Baixe o ZIP de artefatos antes de encerrar a sessão.
+
+Execução manual no Colab:
 
 ```bash
 USE_SYSTEM_PYTHON=1 bash scripts/run_pipeline.sh
@@ -66,10 +72,11 @@ Para iniciar a API depois de concluir o pipeline:
 bash scripts/run_pipeline.sh --serve
 ```
 
-Para executar também o pipeline YOLO (download de dataset e treinamento visual, que exige mais espaço e tempo):
+Para executar também o pipeline YOLO (download de dataset e treinamento visual, que exige mais espaço e tempo), instale as dependências visuais e selecione CUDA quando disponível:
 
 ```bash
-bash scripts/run_pipeline.sh --vision --vision-epochs 50
+python -m pip install -r requirements-vision.txt
+VISION_DEVICE=0 bash scripts/run_pipeline.sh --vision --vision-epochs 50
 ```
 
 O treinamento YOLO é opcional e separado do treinamento tabular. Ele usa o dataset auxiliar genérico e não comprova detecção específica de porosidade nem análise térmica HAZ.
