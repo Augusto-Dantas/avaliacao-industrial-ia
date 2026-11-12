@@ -1,0 +1,47 @@
+name: Validate and train tabular pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test-and-train:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-dev.txt
+      - name: Run industrial data analysis
+        run: python src/analysis.py
+      - name: Train tabular models
+        run: python src/train.py
+      - name: Run pytest
+        run: python -m pytest
+      - name: Upload reports and trained models
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: industrial-ai-pipeline-${{ github.run_number }}
+          path: |
+            reports/analysis.json
+            models/classifier.joblib
+            models/anomaly.joblib
+            models/metrics.json
+          if-no-files-found: warn
+          retention-days: 14
