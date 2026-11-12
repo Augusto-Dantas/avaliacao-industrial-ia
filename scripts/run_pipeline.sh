@@ -57,7 +57,7 @@ done
 
 if [[ -n "${PYTHON_BIN:-}" ]]; then
   PYTHON="$PYTHON_BIN"
-elif [[ "${USE_SYSTEM_PYTHON:-0}" == "1" ]]; then
+elif [[ "${USE_SYSTEM_PYTHON:-0}" == "1" ]] || [[ -n "${COLAB_RELEASE_TAG:-}" ]] || [[ -d "/content" ]]; then
   PYTHON="$(command -v python3 || command -v python)"
 else
   if [[ ! -x .venv/bin/python ]]; then
@@ -107,6 +107,8 @@ else
 fi
 
 if (( RUN_VISION )); then
+  echo "[vision] Instalando dependências opcionais de visão computacional"
+  "$PYTHON" -m pip install -r requirements-vision.txt
   echo "[vision] Preparando dataset e treinando YOLO"
   "$PYTHON" src/setup_yolo.py --train \
     --epochs "$VISION_EPOCHS" \
