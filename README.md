@@ -58,7 +58,7 @@ O comando cria `.venv/` automaticamente quando necessário. Para executar no Goo
 
 [Abrir notebook no Google Colab](https://colab.research.google.com/github/Augusto-Dantas/avaliacao-industrial-ia/blob/main/notebooks/avaliacao_industrial_colab.ipynb)
 
-O notebook clona o repositório, instala dependências no Python gerenciado pelo Colab (sem criar ambiente virtual), executa análise, treinamento tabular e testes e empacota os artefatos. O treino YOLO é opcional e fica desativado por padrão; altere RUN_VISION = True na primeira célula para ativá-lo. Com T4, CUDA usa o dispositivo 0. Baixe o ZIP de artefatos antes de encerrar a sessão.
+O notebook clona o repositório, instala dependências no Python gerenciado pelo Colab (sem criar ambiente virtual), executa análise, treinamento tabular e testes e empacota os artefatos. Ele também exibe barras de progresso por etapa, logs em tempo real e progresso por época no treinamento YOLO. O treino YOLO é opcional e fica desativado por padrão; altere RUN_VISION = True na primeira célula para ativá-lo. Com T4, CUDA usa o dispositivo 0. Baixe o ZIP de artefatos antes de encerrar a sessão.
 
 Execução manual no Colab:
 
